@@ -1,14 +1,44 @@
-name: .NET Worker CI
+# repos renamed: fcg -> fcs
+name: fcs.Donation.Worker CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+    paths:
+      - src/**
+      - tests/**
+      - Directory.Build.props
+      - Directory.Packages.props
+      - .editorconfig
+      - docker-compose.yml
+      - .github/workflows/dotnet-service-ci.yml
   push:
-    branches: [main]
+    branches: [main, develop]
+    paths:
+      - src/**
+      - tests/**
+      - Directory.Build.props
+      - Directory.Packages.props
+      - .editorconfig
+      - docker-compose.yml
+      - .github/workflows/dotnet-service-ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  security-events: write
 
 jobs:
   ci:
-    uses: Flaviojcf/fcg-pipelines/.github/workflows/dotnet-service-ci.yml@main
+    uses: group10-tc-01/fcs-pipelines/.github/workflows/dotnet-service-ci.yml@main
     with:
-      service-name: fcs-donation-worker
-      solution-path: Fcs.Donation.Worker.slnx
+      service_name: fcs-donation-worker
+      dotnet_version: 8.0.x
+      solution_path: Fcs.Donation.Worker.slnx
+      unit_tests_path: tests/Fcs.Donation.Worker.UnitTests/Fcs.Donation.Worker.UnitTests.csproj
+      test_environment: Test
+      coverage_threshold: 80
+      run_sonar: false
+    secrets: inherit

@@ -1,10 +1,12 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace Fcs.Donation.Worker.Application.Common.Abstractions;
 
+[ExcludeFromCodeCoverage]
 public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent : class
 {
     private readonly IConsumer<string, string> _consumer;

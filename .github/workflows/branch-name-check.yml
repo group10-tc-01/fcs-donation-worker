@@ -1,9 +1,17 @@
-name: Branch Name Check
+name: Branch Policy
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  branch-name-check:
-    uses: Flaviojcf/fcg-pipelines/.github/workflows/branch-name-check.yml@main
+  branch-name:
+    uses: group10-tc-01/fcs-pipelines/.github/workflows/branch-name-check.yml@main
+    with:
+      allowed_pattern: ^(feature|fix|bugfix|hotfix|release|chore|docs|refactor|test)\/[a-z0-9._-]+$
+      allow_main: false

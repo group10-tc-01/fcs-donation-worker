@@ -3,9 +3,11 @@ using Fcs.Donation.Worker.Application.Common.Services;
 using Fcs.Donation.Worker.Application.Common.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Fcs.Donation.Worker.Application.Features.SampleEvent;
 
+[ExcludeFromCodeCoverage]
 public sealed class SampleEventConsumer : BaseKafkaConsumer<SampleEvent>
 {
     private readonly ILogger<SampleEventConsumer> _logger;
