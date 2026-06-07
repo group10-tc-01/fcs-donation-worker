@@ -24,8 +24,15 @@ services:
         condition: service_healthy
     environment:
       - DOTNET_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+      - Observability__EnableOtlpExporter=true
+      - Observability__OtlpEndpoint=http://otel-collector:4318
+      - Observability__OtlpAuthHeader=
+    ports:
+      - "8080:8080"
     networks:
       - fcs-donation-worker-network
+      - observability
     restart: unless-stopped
 
   sqlserver:
@@ -100,3 +107,6 @@ services:
 networks:
   fcs-donation-worker-network:
     driver: bridge
+  observability:
+    name: fcs-observability
+    external: true
