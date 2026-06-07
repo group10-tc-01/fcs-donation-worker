@@ -12,5 +12,6 @@ public sealed class KafkaSettings
 
 public sealed class KafkaTopics
 {
-    public string SampleEvent { get; init; } = string.Empty;
+    public string DonationReceived { get; init; } = string.Empty;
+    public string AuditLogRequested { get; init; } = string.Empty;
 }
