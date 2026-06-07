@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "dgSpecHash": "tHVnLf1jz4I=",
+  "success": true,
+  "projectFilePath": "c:\\dev\\study\\fiap\\fase05\\fcs-donation-worker-20260607015236\\src\\Fcs.Donation.Worker.Application\\Fcs.Donation.Worker.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\flavi\\.nuget\\packages\\confluent.kafka\\2.6.1\\confluent.kafka.2.6.1.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\librdkafka.redist\\2.6.1\\librdkafka.redist.2.6.1.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\9.0.11\\microsoft.extensions.configuration.abstractions.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.configuration.binder\\9.0.11\\microsoft.extensions.configuration.binder.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.diagnostics.abstractions\\9.0.11\\microsoft.extensions.diagnostics.abstractions.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.fileproviders.abstractions\\9.0.11\\microsoft.extensions.fileproviders.abstractions.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.hosting.abstractions\\9.0.11\\microsoft.extensions.hosting.abstractions.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\9.0.11\\microsoft.extensions.logging.abstractions.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.options\\9.0.11\\microsoft.extensions.options.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\9.0.11\\microsoft.extensions.options.configurationextensions.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\microsoft.extensions.primitives\\9.0.11\\microsoft.extensions.primitives.9.0.11.nupkg.sha512",
+    "C:\\Users\\flavi\\.nuget\\packages\\system.diagnostics.diagnosticsource\\9.0.11\\system.diagnostics.diagnosticsource.9.0.11.nupkg.sha512"
+  ],
+  "logs": []
+}

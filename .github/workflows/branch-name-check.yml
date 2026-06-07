@@ -1,0 +1,9 @@
+name: Branch Name Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  branch-name-check:
+    uses: Flaviojcf/fcg-pipelines/.github/workflows/branch-name-check.yml@main

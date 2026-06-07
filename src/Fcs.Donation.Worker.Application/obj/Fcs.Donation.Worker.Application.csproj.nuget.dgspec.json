@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "restore": {
+    "c:\\dev\\study\\fiap\\fase05\\fcs-donation-worker-20260607015236\\src\\Fcs.Donation.Worker.Application\\Fcs.Donation.Worker.Application.csproj": {}
+  },
+  "projects": {
+    "c:\\dev\\study\\fiap\\fase05\\fcs-donation-worker-20260607015236\\src\\Fcs.Donation.Worker.Application\\Fcs.Donation.Worker.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\dev\\study\\fiap\\fase05\\fcs-donation-worker-20260607015236\\src\\Fcs.Donation.Worker.Application\\Fcs.Donation.Worker.Application.csproj",
+        "projectName": "Fcs.Donation.Worker.Application",
+        "projectPath": "c:\\dev\\study\\fiap\\fase05\\fcs-donation-worker-20260607015236\\src\\Fcs.Donation.Worker.Application\\Fcs.Donation.Worker.Application.csproj",
+        "packagesPath": "C:\\Users\\flavi\\.nuget\\packages\\",
+        "outputPath": "c:\\dev\\study\\fiap\\fase05\\fcs-donation-worker-20260607015236\\src\\Fcs.Donation.Worker.Application\\obj\\",
+        "projectStyle": "PackageReference",
+        "centralPackageVersionsManagementEnabled": true,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\flavi\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "allWarningsAsErrors": true,
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Confluent.Kafka": {
+              "target": "Package",
+              "version": "[2.6.1, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.Configuration.Binder": {
+              "target": "Package",
+              "version": "[9.0.11, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[10.0.0, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.Hosting.Abstractions": {
+              "target": "Package",
+              "version": "[9.0.11, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[9.0.11, )",
+              "versionCentrallyManaged": true
+            },
+            "Microsoft.Extensions.Options.ConfigurationExtensions": {
+              "target": "Package",
+              "version": "[9.0.11, )",
+              "versionCentrallyManaged": true
+            }
+          },
+          "centralPackageVersions": {
+            "Confluent.Kafka": "2.6.1",
+            "Microsoft.Extensions.Configuration.Binder": "9.0.11",
+            "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
+            "Microsoft.Extensions.Hosting": "8.0.1",
+            "Microsoft.Extensions.Hosting.Abstractions": "9.0.11",
+            "Microsoft.Extensions.Logging.Abstractions": "9.0.11",
+            "Microsoft.Extensions.Options.ConfigurationExtensions": "9.0.11",
+            "Serilog.Extensions.Hosting": "8.0.0",
+            "Serilog.Settings.Configuration": "8.0.4",
+            "Serilog.Sinks.Console": "6.0.0",
+            "Serilog.Sinks.Seq": "8.0.0"
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

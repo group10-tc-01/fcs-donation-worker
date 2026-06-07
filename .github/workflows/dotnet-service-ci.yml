@@ -1,0 +1,14 @@
+name: .NET Worker CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    uses: Flaviojcf/fcg-pipelines/.github/workflows/dotnet-service-ci.yml@main
+    with:
+      service-name: fcs-donation-worker
+      solution-path: Fcs.Donation.Worker.slnx

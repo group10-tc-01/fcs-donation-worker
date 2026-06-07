@@ -1,0 +1,14 @@
+name: .NET Worker Delivery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+jobs:
+  delivery:
+    uses: Flaviojcf/fcg-pipelines/.github/workflows/dotnet-service-delivery.yml@main
+    with:
+      service-name: fcs-donation-worker
+      dockerfile-path: src/Fcs.Donation.Worker.Worker/Dockerfile

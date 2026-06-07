@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Fcs.Donation.Worker.Application/Fcs.Donation.Worker.Application.csproj" />
+    <Project Path="src/Fcs.Donation.Worker.Worker/Fcs.Donation.Worker.Worker.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,82 @@
+services:
+  seq:
+    image: datalust/seq:latest
+    container_name: seq-fcs-donation-worker
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:5341"
+      - "5342:80"
+    networks:
+      - fcs-donation-worker-network
+
+  fcs-donation-worker:
+    build:
+      context: .
+      dockerfile: src/Fcs.Donation.Worker.Worker/Dockerfile
+    container_name: fcs-donation-worker
+    depends_on:
+      seq:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    environment:
+      - DOTNET_ENVIRONMENT=Docker
+    networks:
+      - fcs-donation-worker-network
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper-fcs-donation-worker
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - fcs-donation-worker-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka-fcs-donation-worker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - fcs-donation-worker-network
+    healthcheck:
+      test: kafka-broker-api-versions --bootstrap-server kafka:29092 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-fcs-donation-worker
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      DYNAMIC_CONFIG_ENABLED: "true"
+    depends_on:
+      - kafka
+    networks:
+      - fcs-donation-worker-network
+
+networks:
+  fcs-donation-worker-network:
+    driver: bridge
