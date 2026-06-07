@@ -42,6 +42,6 @@ jobs:
       test_environment: Test
       coverage_threshold: 80
       run_sonar: false
-      dockerfile_path: src/Fcs.Donation.Worker/Dockerfile
+      dockerfile_path: src/Fcs.Donation.Worker.Worker/Dockerfile
       docker_context: .
     secrets: inherit
