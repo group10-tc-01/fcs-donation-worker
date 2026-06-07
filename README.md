@@ -164,24 +164,25 @@ Eventos de auditoria esperados:
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download)
 - [Docker](https://docs.docker.com/get-docker/) e Docker Compose
-- Portas livres no host: `9092` (Kafka), `8081` (Kafka UI), `5341` (Seq).
+- Portas livres no host: `1433` (SQL Server), `9092` (Kafka), `8081` (Kafka UI), `5341` (Seq).
 
 ---
 
 ## Subindo o Ambiente Local
 
-O `docker-compose.yml` deste repositorio sobe apenas as dependencias deste worker (Kafka, Kafka UI e Seq) e, opcionalmente, o proprio worker. Para o ambiente completo integrado da Conexao Solidaria utilize o repositorio `fcs-infra`.
+O `docker-compose.yml` deste repositorio sobe apenas as dependencias deste worker (SQL Server, Kafka, Kafka UI e Seq) e, opcionalmente, o proprio worker. Para o ambiente completo integrado da Conexao Solidaria utilize o repositorio `fcs-infra`.
 
 ### 1. Subir dependencias
 
 ```bash
-docker compose up -d zookeeper kafka kafka-ui seq
+docker compose up -d sqlserver zookeeper kafka kafka-ui seq
 ```
 
 URLs uteis:
 
 - Kafka UI: http://localhost:8081
 - Seq: http://localhost:5341
+- SQL Server: `Server=localhost,1433;Database=DonationsDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True`
 
 ### 2. Rodar o worker localmente
 

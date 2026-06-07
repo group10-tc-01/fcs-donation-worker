@@ -9,6 +9,8 @@ namespace Fcs.Donation.Worker.Application.Common.Abstractions;
 [ExcludeFromCodeCoverage]
 public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent : class
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+
     private readonly IConsumer<string, string> _consumer;
     private readonly ILogger _logger;
     private readonly string _topic;
@@ -66,15 +68,42 @@ public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent
                 return;
             }
 
-            var @event = JsonSerializer.Deserialize<TEvent>(consumeResult.Message.Value);
+            TEvent? @event;
 
-            if (@event is null)
+            try
             {
-                _logger.LogWarning("Ignoring empty or invalid message from topic {Topic}", _topic);
+                @event = JsonSerializer.Deserialize<TEvent>(consumeResult.Message.Value, SerializerOptions);
+            }
+            catch (JsonException exception)
+            {
+                _logger.LogWarning(exception, "Discarding invalid JSON message from topic {Topic} at offset {Offset}", _topic, consumeResult.Offset);
+                _consumer.Commit(consumeResult);
                 return;
             }
 
-            await ProcessEventAsync(@event, cancellationToken);
+            if (@event is null)
+            {
+                _logger.LogWarning("Discarding empty message from topic {Topic} at offset {Offset}", _topic, consumeResult.Offset);
+                _consumer.Commit(consumeResult);
+                return;
+            }
+
+            try
+            {
+                await ProcessEventAsync(@event, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error processing message from topic {Topic} at offset {Offset}; message was not committed", _topic, consumeResult.Offset);
+                _consumer.Seek(consumeResult.TopicPartitionOffset);
+                await Task.Delay(1000, cancellationToken);
+                return;
+            }
+
             _consumer.Commit(consumeResult);
         }
         catch (ConsumeException exception)
