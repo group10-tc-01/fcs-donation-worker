@@ -1,14 +1,18 @@
 using Fcs.Donation.Worker.Application.DependencyInjection;
+using Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer;
 using Fcs.Donation.Worker.Worker.Observability;
+using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Sinks.OpenTelemetry;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Fcs.Donation.Worker.Worker;
 
+[ExcludeFromCodeCoverage]
 public class Program
 {
     protected Program() { }
@@ -22,6 +26,15 @@ public class Program
         AddSerilogLogging(builder.Services, builder.Configuration);
 
         var app = builder.Build();
+
+        if (!app.Environment.IsEnvironment("Test"))
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<DonationsDbContext>();
+                context.Database.Migrate();
+            }
+        }
 
         app.MapHealthChecks("/health");
         app.MapPrometheusScrapingEndpoint("/metrics");

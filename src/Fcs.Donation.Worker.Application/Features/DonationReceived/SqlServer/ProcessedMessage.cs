@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer;
 
+[ExcludeFromCodeCoverage]
 public sealed class ProcessedMessage
 {
     private ProcessedMessage()

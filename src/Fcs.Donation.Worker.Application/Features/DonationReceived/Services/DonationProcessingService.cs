@@ -2,6 +2,7 @@ using Fcs.Donation.Worker.Application.Features.DonationReceived.Audit;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Events;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Http;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer;
+using DonationEntity = Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer.Donation;
 
 namespace Fcs.Donation.Worker.Application.Features.DonationReceived.Services;
 
@@ -37,8 +38,10 @@ public sealed class DonationProcessingService
         var donation = await _repository.GetDonationAsync(@event.DonationId, cancellationToken);
         if (donation is null)
         {
-            await PublishFailedAudit(@event, "Donation was not found.", cancellationToken);
-            return;
+            donation = DonationEntity.CreatePending(
+                @event.DonationId, @event.CampaignId, @event.DonorId, @event.Amount, @event.OccurredAt);
+            await _repository.AddDonationAsync(donation, cancellationToken);
+            await _repository.SaveChangesAsync(cancellationToken);
         }
 
         if (donation.Status is not DonationStatus.Pending)
@@ -54,8 +57,7 @@ public sealed class DonationProcessingService
             if (!response.IsSuccessStatusCode || response.Content is null || !response.Content.Success)
             {
                 var statusCode = response.StatusCode.HasValue ? ((int)response.StatusCode.Value).ToString() : "unknown status";
-                var message = response.Content?.Message ?? $"Campaigns API returned {statusCode}.";
-                throw new InvalidOperationException(message);
+                throw new InvalidOperationException($"Campaigns API returned {statusCode}.");
             }
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

@@ -59,7 +59,7 @@ public sealed class DonationProcessingServiceTests
     }
 
     [Fact]
-    public async Task Given_DonationNotFound_When_ProcessAsyncIsCalled_Then_ShouldPublishDonationFailedAudit()
+    public async Task Given_DonationNotFound_When_ProcessAsyncIsCalled_Then_ShouldCreateDonationAndProcess()
     {
         var repository = new InMemoryDonationProcessingRepository();
         var campaignsClient = new FakeCampaignsClient();
@@ -68,12 +68,13 @@ public sealed class DonationProcessingServiceTests
 
         await service.ProcessAsync(CreateEvent(), CancellationToken.None);
 
-        campaignsClient.Requests.Should().BeEmpty();
-        repository.ProcessedMessages.Should().BeEmpty();
-        repository.SaveChangesCount.Should().Be(0);
-        auditPublisher.Events.Should().ContainSingle(e =>
-            e.Action == AuditActions.DonationFailed &&
-            e.EntityId == DonationId.ToString());
+        campaignsClient.Requests.Should().ContainSingle(r => r.CampaignId == CampaignId);
+        var donation = await repository.GetDonationAsync(DonationId, CancellationToken.None);
+        donation.Should().NotBeNull();
+        donation!.Status.Should().Be(DonationStatus.Processed);
+        repository.SaveChangesCount.Should().Be(2);
+        repository.ProcessedMessages.Should().ContainSingle(m => m.MessageId == EventId);
+        auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DonationProcessed);
     }
 
     [Fact]
@@ -147,6 +148,12 @@ public sealed class DonationProcessingServiceTests
         {
             _donations.TryGetValue(donationId, out var donation);
             return Task.FromResult(donation);
+        }
+
+        public Task AddDonationAsync(DonationEntity donation, CancellationToken cancellationToken)
+        {
+            _donations[donation.Id] = donation;
+            return Task.CompletedTask;
         }
 
         public Task AddProcessedMessageAsync(ProcessedMessage processedMessage, CancellationToken cancellationToken)
