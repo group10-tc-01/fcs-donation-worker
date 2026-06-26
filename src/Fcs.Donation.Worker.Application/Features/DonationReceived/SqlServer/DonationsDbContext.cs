@@ -17,7 +17,7 @@ public sealed class DonationsDbContext : DbContext
     {
         modelBuilder.Entity<Donation>(builder =>
         {
-            builder.ToTable("Donations");
+            builder.ToTable("Donations", t => t.ExcludeFromMigrations());
             builder.HasKey(donation => donation.Id);
             builder.Property(donation => donation.CampaignId).IsRequired();
             builder.Property(donation => donation.DonorId).IsRequired();

@@ -25,6 +25,11 @@ public sealed class SqlServerDonationProcessingRepository : IDonationProcessingR
         return _dbContext.Donations.FirstOrDefaultAsync(donation => donation.Id == donationId, cancellationToken);
     }
 
+    public Task AddDonationAsync(Donation donation, CancellationToken cancellationToken)
+    {
+        return _dbContext.Donations.AddAsync(donation, cancellationToken).AsTask();
+    }
+
     public Task AddProcessedMessageAsync(ProcessedMessage processedMessage, CancellationToken cancellationToken)
     {
         return _dbContext.ProcessedMessages.AddAsync(processedMessage, cancellationToken).AsTask();

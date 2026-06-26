@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Fcs.Donation.Worker.Application.Common.Settings;
 
+[ExcludeFromCodeCoverage]
 public sealed class KafkaSettings
 {
     public const string SectionName = "KafkaSettings";
@@ -10,6 +13,7 @@ public sealed class KafkaSettings
     public KafkaTopics Topics { get; init; } = new();
 }
 
+[ExcludeFromCodeCoverage]
 public sealed class KafkaTopics
 {
     public string DonationReceived { get; init; } = string.Empty;

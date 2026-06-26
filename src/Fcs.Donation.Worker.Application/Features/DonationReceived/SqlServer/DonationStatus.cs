@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer;
 
 public enum DonationStatus
