@@ -36,7 +36,7 @@ jobs:
     uses: group10-tc-01/fcs-pipelines/.github/workflows/dotnet-service-ci.yml@main
     with:
       service_name: fcs-donation-worker
-      dotnet_version: 8.0.x
+      dotnet_version: 10.0.x
       solution_path: Fcs.Donation.Worker.slnx
       unit_tests_path: tests/Fcs.Donation.Worker.UnitTests/Fcs.Donation.Worker.UnitTests.csproj
       test_environment: Test
