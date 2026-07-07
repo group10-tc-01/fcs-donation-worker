@@ -2,7 +2,6 @@ using Fcs.Donation.Worker.Application.Features.DonationReceived.Audit;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Events;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Http;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer;
-using DonationEntity = Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer.Donation;
 
 namespace Fcs.Donation.Worker.Application.Features.DonationReceived.Services;
 
@@ -38,15 +37,26 @@ public sealed class DonationProcessingService
         var donation = await _repository.GetDonationAsync(@event.DonationId, cancellationToken);
         if (donation is null)
         {
-            donation = DonationEntity.CreatePending(
-                @event.DonationId, @event.CampaignId, @event.DonorId, @event.Amount, @event.OccurredAt);
-            await _repository.AddDonationAsync(donation, cancellationToken);
+            var failureReason = "Donation not found.";
+            await AddProcessedMessageAsync(@event, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
+            await PublishFailedAudit(@event, failureReason, cancellationToken);
+            return;
         }
 
         if (donation.Status is not DonationStatus.Pending)
         {
-            await PublishFailedAudit(@event, $"Donation is not pending. Current status: {donation.Status}.", cancellationToken);
+            var failureReason = $"Donation is not pending. Current status: {donation.Status}.";
+            await AddProcessedMessageAsync(@event, cancellationToken);
+            await _repository.SaveChangesAsync(cancellationToken);
+
+            if (donation.Status is DonationStatus.Processed)
+            {
+                await PublishDuplicateAudit(@event, cancellationToken);
+                return;
+            }
+
+            await PublishFailedAudit(@event, failureReason, cancellationToken);
             return;
         }
 
@@ -64,17 +74,23 @@ public sealed class DonationProcessingService
         {
             var failureReason = $"Campaign update failed: {exception.Message}";
             donation.MarkFailed(failureReason, _timeProvider.GetUtcNow().UtcDateTime);
+            await AddProcessedMessageAsync(@event, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);
             await PublishFailedAudit(@event, failureReason, cancellationToken);
             return;
         }
 
-        await _repository.AddProcessedMessageAsync(
-            new ProcessedMessage(Guid.NewGuid(), @event.EventId, DonationReceivedTopic, _timeProvider.GetUtcNow().UtcDateTime),
-            cancellationToken);
+        await AddProcessedMessageAsync(@event, cancellationToken);
         donation.MarkProcessed(@event.OccurredAt);
         await _repository.SaveChangesAsync(cancellationToken);
         await PublishProcessedAudit(@event, cancellationToken);
+    }
+
+    private Task AddProcessedMessageAsync(DonationReceivedEvent @event, CancellationToken cancellationToken)
+    {
+        return _repository.AddProcessedMessageAsync(
+            new ProcessedMessage(Guid.NewGuid(), @event.EventId, DonationReceivedTopic, _timeProvider.GetUtcNow().UtcDateTime),
+            cancellationToken);
     }
 
     private Task PublishProcessedAudit(DonationReceivedEvent @event, CancellationToken cancellationToken)

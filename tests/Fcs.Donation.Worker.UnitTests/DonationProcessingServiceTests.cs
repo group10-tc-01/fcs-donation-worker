@@ -59,7 +59,7 @@ public sealed class DonationProcessingServiceTests
     }
 
     [Fact]
-    public async Task Given_DonationNotFound_When_ProcessAsyncIsCalled_Then_ShouldCreateDonationAndProcess()
+    public async Task Given_DonationNotFound_When_ProcessAsyncIsCalled_Then_ShouldRecordMessageAndPublishDonationFailedAudit()
     {
         var repository = new InMemoryDonationProcessingRepository();
         var campaignsClient = new FakeCampaignsClient();
@@ -68,17 +68,17 @@ public sealed class DonationProcessingServiceTests
 
         await service.ProcessAsync(CreateEvent(), CancellationToken.None);
 
-        campaignsClient.Requests.Should().ContainSingle(r => r.CampaignId == CampaignId);
+        campaignsClient.Requests.Should().BeEmpty();
         var donation = await repository.GetDonationAsync(DonationId, CancellationToken.None);
-        donation.Should().NotBeNull();
-        donation!.Status.Should().Be(DonationStatus.Processed);
-        repository.SaveChangesCount.Should().Be(2);
+        donation.Should().BeNull();
+        repository.SaveChangesCount.Should().Be(1);
         repository.ProcessedMessages.Should().ContainSingle(m => m.MessageId == EventId);
-        auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DonationProcessed);
+        var auditEvent = auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DonationFailed).Subject;
+        auditEvent.Metadata.Should().Contain(pair => pair.Key == "failureReason" && (string?)pair.Value == "Donation not found.");
     }
 
     [Fact]
-    public async Task Given_DonationAlreadyProcessed_When_ProcessAsyncIsCalled_Then_ShouldPublishDonationFailedAuditWithoutCallingCampaigns()
+    public async Task Given_DonationAlreadyProcessedWithoutLedger_When_ProcessAsyncIsCalled_Then_ShouldRecordMessageAndPublishDuplicateAudit()
     {
         var donation = DonationEntity.CreatePending(DonationId, CampaignId, DonorId, 100m, OccurredAt);
         donation.MarkProcessed(OccurredAt);
@@ -90,9 +90,28 @@ public sealed class DonationProcessingServiceTests
         await service.ProcessAsync(CreateEvent(), CancellationToken.None);
 
         campaignsClient.Requests.Should().BeEmpty();
-        repository.ProcessedMessages.Should().BeEmpty();
-        repository.SaveChangesCount.Should().Be(0);
-        auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DonationFailed);
+        repository.ProcessedMessages.Should().ContainSingle(m => m.MessageId == EventId);
+        repository.SaveChangesCount.Should().Be(1);
+        auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DuplicateMessageIgnored);
+    }
+
+    [Fact]
+    public async Task Given_DonationAlreadyFailedWithoutLedger_When_ProcessAsyncIsCalled_Then_ShouldRecordMessageAndPublishDonationFailedAudit()
+    {
+        var donation = DonationEntity.CreatePending(DonationId, CampaignId, DonorId, 100m, OccurredAt);
+        donation.MarkFailed("Previous failure.", OccurredAt);
+        var repository = new InMemoryDonationProcessingRepository(donation);
+        var campaignsClient = new FakeCampaignsClient();
+        var auditPublisher = new FakeAuditPublisher();
+        var service = CreateService(repository, campaignsClient, auditPublisher);
+
+        await service.ProcessAsync(CreateEvent(), CancellationToken.None);
+
+        campaignsClient.Requests.Should().BeEmpty();
+        repository.ProcessedMessages.Should().ContainSingle(m => m.MessageId == EventId);
+        repository.SaveChangesCount.Should().Be(1);
+        var auditEvent = auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DonationFailed).Subject;
+        auditEvent.Metadata.Should().Contain(pair => pair.Key == "failureReason" && (string?)pair.Value == "Donation is not pending. Current status: Failed.");
     }
 
     [Fact]
@@ -109,7 +128,7 @@ public sealed class DonationProcessingServiceTests
         donation.Status.Should().Be(DonationStatus.Failed);
         donation.ProcessedAt.Should().NotBeNull();
         donation.FailureReason.Should().Contain("Campaign update failed");
-        repository.ProcessedMessages.Should().BeEmpty();
+        repository.ProcessedMessages.Should().ContainSingle(m => m.MessageId == EventId);
         repository.SaveChangesCount.Should().Be(1);
         auditPublisher.Events.Should().ContainSingle(e => e.Action == AuditActions.DonationFailed);
     }
@@ -148,12 +167,6 @@ public sealed class DonationProcessingServiceTests
         {
             _donations.TryGetValue(donationId, out var donation);
             return Task.FromResult(donation);
-        }
-
-        public Task AddDonationAsync(DonationEntity donation, CancellationToken cancellationToken)
-        {
-            _donations[donation.Id] = donation;
-            return Task.CompletedTask;
         }
 
         public Task AddProcessedMessageAsync(ProcessedMessage processedMessage, CancellationToken cancellationToken)
