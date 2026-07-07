@@ -51,7 +51,7 @@ fcs-donation-worker
         |
         +--> DonationsDb: status Processed ou Failed
         |
-        +--> fcs-campaign: POST /internal/campaigns/{id}/donation-processed
+        +--> fcs-campaign: POST /api/v1/internal/campaigns/{id}/donation-processed
         |
         +--> Kafka topic audit-log-requested
 ```
@@ -59,7 +59,7 @@ fcs-donation-worker
 Regras importantes:
 
 - A `fcs-donations` publica `DonationReceivedEvent` via outbox.
-- O worker registra mensagens processadas para ignorar redeliveries.
+- O worker registra mensagens tratadas em estado terminal em `ProcessedMessages` para ignorar redeliveries.
 - Duplicidade deve ser tratada como sucesso operacional e nao deve chamar campanhas novamente.
 - A atualizacao da campanha sempre passa pela API interna da `fcs-campaign`.
 - O offset Kafka so deve ser confirmado apos processamento de negocio bem-sucedido, duplicidade idempotente ou falha controlada registrada.
@@ -111,7 +111,7 @@ Campos obrigatorios:
 Chamada esperada para campanhas:
 
 ```text
-POST /internal/campaigns/{id}/donation-processed
+POST /api/v1/internal/campaigns/{id}/donation-processed
 ```
 
 Payload:
@@ -151,6 +151,8 @@ Estrutura interna alinhada ao padrao da fase 04 ([ADR 0023](https://github.com/g
   - `ProcessedMessages`
 
 O worker nao cria foreign keys para bancos de outros servicos.
+
+`ProcessedMessages` registra o `eventId + topic` quando a mensagem chega a um resultado terminal: sucesso, doacao inexistente, doacao fora de `Pending` ou falha controlada apos tentativas de refletir a doacao na `fcs-campaign`.
 
 Eventos de auditoria esperados:
 
