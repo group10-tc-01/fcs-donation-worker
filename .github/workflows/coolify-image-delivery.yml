@@ -1,0 +1,28 @@
+name: fcs.Donation.Worker Delivery To Coolify
+
+on:
+  workflow_run:
+    workflows: ["fcs.Donation.Worker CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  delivery:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: group10-tc-01/fcs-pipelines/.github/workflows/coolify-image-delivery.yml@main
+    with:
+      app_name: fcs-donation-worker
+      source_ref: ${{ github.event.workflow_run.head_sha }}
+      image_registry: ghcr.io
+      image_owner: group10-tc-01
+      image_name: fcs-donation-worker
+      dockerfile_path: src/Fcs.Donation.Worker.Worker/Dockerfile
+      docker_context: .
+      coolify_base_url: ${{ vars.COOLIFY_BASE_URL }}
+      coolify_resource_uuid: ${{ vars.COOLIFY_RESOURCE_UUID }}
+    secrets: inherit
