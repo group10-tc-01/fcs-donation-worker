@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: donation-worker-config
+  namespace: fcs-donation-worker
+data:
+  DOTNET_ENVIRONMENT: Production
+  ASPNETCORE_ENVIRONMENT: Production
+  ASPNETCORE_URLS: http://+:8080
+  KafkaSettings__BootstrapServers: kafka-service.fcs-infra.svc.cluster.local:29092
+  KafkaSettings__GroupId: fcs-donation-worker-consumer-group
+  KafkaSettings__ConsumerTimeoutMs: "100"
+  KafkaSettings__Topics__DonationReceived: donation-received
+  KafkaSettings__Topics__AuditLogRequested: audit-log-requested
+  CampaignsApi__BaseUrl: http://fcs-campaign-service.fcs-campaigns.svc.cluster.local:8080
+  CampaignsApi__Retry__RetryCount: "3"
+  CampaignsApi__Retry__BaseDelayMilliseconds: "200"
+  Observability__ServiceName: Fcs.Donation.Worker
+  Observability__EnableOtlpExporter: "true"
+  Observability__OtlpEndpoint: http://otel-collector-service.fcs-infra.svc.cluster.local:4318
+  Observability__OtlpAuthHeader: ""
