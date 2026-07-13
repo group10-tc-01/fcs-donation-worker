@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fcs-donation-worker-operational
+  namespace: fcs-donation-worker
+spec:
+  ingressClassName: fcs-traefik
+  tls:
+    - hosts:
+        - fcs-donation-worker.flaviojcf.com.br
+      secretName: fcs-donation-worker-tls
+  rules:
+    - host: fcs-donation-worker.flaviojcf.com.br
+      http:
+        paths:
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: fcs-donation-worker-service
+                port:
+                  number: 8080
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: fcs-donation-worker-service
+                port:
+                  number: 8080

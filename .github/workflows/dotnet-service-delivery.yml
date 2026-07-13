@@ -1,0 +1,30 @@
+name: Fcs.Donation.Worker Delivery To K3s
+
+on:
+  workflow_run:
+    workflows: ["fcs.Donation.Worker CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: group10-tc-01/fcs-pipelines/.github/workflows/k3s-service-delivery.yml@main
+    with:
+      service_name: fcs-donation-worker
+      image_repository: ghcr.io/group10-tc-01/fcs-donation-worker
+      source_ref: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.workflow_run.head_sha }}
+      k8s_namespace: fcs-donation-worker
+      k8s_deployment_name: fcs-donation-worker
+      k8s_container_name: worker
+      k8s_manifest_path: k8s
+      k8s_apply_mode: kustomize
+      healthcheck_url: https://fcs-donation-worker.flaviojcf.com.br/health
+      vps_host: ${{ vars.VPS_HOST }}
+      vps_deploy_user: ${{ vars.VPS_DEPLOY_USER }}
+      environment: production
+    secrets: inherit

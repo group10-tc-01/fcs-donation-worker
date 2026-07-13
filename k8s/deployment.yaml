@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fcs-donation-worker
+  namespace: fcs-donation-worker
+  labels:
+    app.kubernetes.io/name: fcs-donation-worker
+    app.kubernetes.io/part-of: fcs
+  annotations:
+    secrets.infisical.com/auto-reload: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fcs-donation-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fcs-donation-worker
+        app.kubernetes.io/part-of: fcs
+        tags.datadoghq.com/service: fcs-donation-worker
+        tags.datadoghq.com/env: production
+      annotations:
+        fcs.platform/deployed-at: not-deployed
+        fcs.platform/source-sha: not-deployed
+        fcs.platform/image: not-deployed
+        ad.datadoghq.com/worker.checks: |
+          {
+            "openmetrics": {
+              "init_config": {},
+              "instances": [
+                {
+                  "openmetrics_endpoint": "http://%%host%%:%%port%%/metrics",
+                  "namespace": "fcs_donation_worker",
+                  "metrics": [".*"]
+                }
+              ]
+            },
+            "http_check": {
+              "init_config": {},
+              "instances": [
+                {
+                  "name": "fcs-donation-worker-health",
+                  "url": "http://%%host%%:%%port%%/health",
+                  "timeout": 5,
+                  "collect_response_time": true
+                }
+              ]
+            }
+          }
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/group10-tc-01/fcs-donation-worker:main
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: donation-worker-config
+          env:
+            - name: ConnectionStrings__SqlServer
+              valueFrom:
+                secretKeyRef:
+                  name: donation-worker-runtime
+                  key: ConnectionStrings__SqlServer
+            - name: Deployment__DeployedAt
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['fcs.platform/deployed-at']
+            - name: Deployment__SourceSha
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['fcs.platform/source-sha']
+            - name: Deployment__Image
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['fcs.platform/image']
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20

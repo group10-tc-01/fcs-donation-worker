@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fcs-donation-worker-tls
+  namespace: fcs-donation-worker
+spec:
+  secretName: fcs-donation-worker-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  dnsNames:
+    - fcs-donation-worker.flaviojcf.com.br

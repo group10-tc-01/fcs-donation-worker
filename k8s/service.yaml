@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fcs-donation-worker-service
+  namespace: fcs-donation-worker
+  labels:
+    app.kubernetes.io/name: fcs-donation-worker
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: fcs-donation-worker
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
