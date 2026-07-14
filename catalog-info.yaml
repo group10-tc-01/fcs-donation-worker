@@ -1,0 +1,23 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fcs-donation-worker
+  title: FCS Donation Worker
+  description: Consumidor Kafka que processa doações e atualiza campanhas de forma assíncrona.
+  annotations:
+    github.com/project-slug: group10-tc-01/fcs-donation-worker
+    backstage.io/techdocs-ref: dir:.
+    backstage.io/kubernetes-id: fcs-donation-worker
+    backstage.io/kubernetes-namespace: fcs-donation-worker
+  links:
+    - title: Datadog
+      url: https://us5.datadoghq.com/metric/explorer?query=service%3Afcs-donation-worker
+      icon: dashboard
+spec:
+  type: service
+  lifecycle: production
+  owner: group:default/fcs-team
+  system: conexao-solidaria
+  dependsOn:
+    - component:default/fcs-campaign
+    - resource:default/kafka

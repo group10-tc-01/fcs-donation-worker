@@ -1,0 +1,5 @@
+site_name: FCS Donation Worker
+nav:
+  - Início: index.md
+plugins:
+  - techdocs-core
