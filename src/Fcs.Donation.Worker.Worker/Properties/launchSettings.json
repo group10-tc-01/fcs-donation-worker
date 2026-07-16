@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Fcs.Donation.Worker.Worker": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:54593;http://localhost:54594"
+    }
+  }
+}
