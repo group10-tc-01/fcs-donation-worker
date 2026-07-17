@@ -2,7 +2,7 @@
 
 Worker de processamento assíncrono de doações da plataforma Conexão Solidária. Consome eventos `DonationReceivedEvent` publicados no Kafka pela `fcs-donations`, atualiza o status da doação no `DonationsDb` e notifica a `fcs-campaign` por API interna para refletir o valor arrecadado.
 
-> Microsserviço que compõe o MVP da Conexão Solidária junto a `fcs-identity`, `fcs-campaign`, `fcs-donations`, `fcs-audit-logs`, `fcs-web` e `fcs-infra`.
+> Microsserviço que compõe o MVP da Conexão Solidária junto a `fcs-identity`, `fcs-campaign`, `fcs-donations`, `fcs-notifications`, `fcs-audit-logs`, `fcs-web` e `fcs-infra`.
 
 ---
 
@@ -14,6 +14,7 @@ Worker de processamento assíncrono de doações da plataforma Conexão Solidár
 - Atualizar a doação para `Processed` ou `Failed`.
 - Preencher `FailureReason` quando a doação falhar.
 - Chamar a API interna da `fcs-campaign` para registrar doação processada.
+- Publicar `EmailNotificationRequestedEvent` para a `fcs-notifications` após uma doação processada.
 - Publicar eventos explícitos de auditoria quando houver processamento, falha ou duplicidade.
 - Expor apenas endpoints operacionais `/health` e `/metrics` quando configurados no ambiente de execução.
 
