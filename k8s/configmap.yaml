@@ -11,7 +11,8 @@ data:
   KafkaSettings__GroupId: fcs-donation-worker-consumer-group
   KafkaSettings__ConsumerTimeoutMs: "100"
   KafkaSettings__Topics__DonationReceived: donation-received
-  KafkaSettings__Topics__AuditLogRequested: audit-log-requested
+  KafkaSettings__Topics__AuditLog: audit-log-requested
+  KafkaSettings__Topics__EmailNotification: email-notification-requested
   CampaignsApi__BaseUrl: http://fcs-campaign-service.fcs-campaigns.svc.cluster.local:8080
   CampaignsApi__Retry__RetryCount: "3"
   CampaignsApi__Retry__BaseDelayMilliseconds: "200"

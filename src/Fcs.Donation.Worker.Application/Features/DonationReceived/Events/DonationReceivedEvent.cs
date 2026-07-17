@@ -9,4 +9,5 @@ public sealed record DonationReceivedEvent(
     Guid CampaignId,
     Guid DonorId,
     decimal Amount,
-    DateTime OccurredAt);
+    DateTime OccurredAt,
+    string RecipientEmail);

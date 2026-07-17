@@ -1,7 +1,11 @@
+using Fcs.Donation.Worker.Application.Common.Messaging;
+using Fcs.Donation.Worker.Application.Common.Settings;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Audit;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Events;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Http;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.SqlServer;
+using Fcs.Donation.Worker.Application.Features.DonationReceived.Notifications;
+using Microsoft.Extensions.Logging;
 
 namespace Fcs.Donation.Worker.Application.Features.DonationReceived.Services;
 
@@ -11,19 +15,22 @@ public sealed class DonationProcessingService
 
     private readonly IDonationProcessingRepository _repository;
     private readonly ICampaignsClient _campaignsClient;
-    private readonly IAuditPublisher _auditPublisher;
+    private readonly IMessagePublisher _messagePublisher;
     private readonly TimeProvider _timeProvider;
+    private readonly ILogger<DonationProcessingService>? _logger;
 
     public DonationProcessingService(
         IDonationProcessingRepository repository,
         ICampaignsClient campaignsClient,
-        IAuditPublisher auditPublisher,
-        TimeProvider timeProvider)
+        IMessagePublisher messagePublisher,
+        TimeProvider timeProvider,
+        ILogger<DonationProcessingService>? logger = null)
     {
         _repository = repository;
         _campaignsClient = campaignsClient;
-        _auditPublisher = auditPublisher;
+        _messagePublisher = messagePublisher;
         _timeProvider = timeProvider;
+        _logger = logger;
     }
 
     public async Task ProcessAsync(DonationReceivedEvent @event, CancellationToken cancellationToken)
@@ -84,6 +91,26 @@ public sealed class DonationProcessingService
         donation.MarkProcessed(@event.OccurredAt);
         await _repository.SaveChangesAsync(cancellationToken);
         await PublishProcessedAudit(@event, cancellationToken);
+        await PublishProcessedNotificationAsync(@event, cancellationToken);
+    }
+
+    private async Task PublishProcessedNotificationAsync(DonationReceivedEvent @event, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _messagePublisher.PublishAsync(
+                KafkaTopicKeys.EmailNotification,
+                new EmailNotificationRequestedEvent(Guid.NewGuid(), EmailNotificationRequestedEvent.DonationProcessed, @event.RecipientEmail, @event.DonationId, @event.Amount, _timeProvider.GetUtcNow().UtcDateTime),
+                cancellationToken);
+        }
+        catch (Exception) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger?.LogError(exception, "Failed to publish processed donation notification for donation {DonationId}", @event.DonationId);
+        }
     }
 
     private Task AddProcessedMessageAsync(DonationReceivedEvent @event, CancellationToken cancellationToken)
@@ -95,7 +122,7 @@ public sealed class DonationProcessingService
 
     private Task PublishProcessedAudit(DonationReceivedEvent @event, CancellationToken cancellationToken)
     {
-        return _auditPublisher.PublishAsync(AuditLogRequestedEvent.Create(
+        return _messagePublisher.PublishAsync(KafkaTopicKeys.AuditLog, AuditLogRequestedEvent.Create(
             AuditActions.DonationProcessed,
             "Donation",
             @event.DonationId.ToString(),
@@ -106,7 +133,7 @@ public sealed class DonationProcessingService
 
     private Task PublishDuplicateAudit(DonationReceivedEvent @event, CancellationToken cancellationToken)
     {
-        return _auditPublisher.PublishAsync(AuditLogRequestedEvent.Create(
+        return _messagePublisher.PublishAsync(KafkaTopicKeys.AuditLog, AuditLogRequestedEvent.Create(
             AuditActions.DuplicateMessageIgnored,
             "ProcessedMessage",
             @event.EventId.ToString(),
@@ -120,7 +147,7 @@ public sealed class DonationProcessingService
         var metadata = BuildMetadata(@event).ToDictionary(pair => pair.Key, pair => pair.Value);
         metadata["failureReason"] = reason;
 
-        return _auditPublisher.PublishAsync(AuditLogRequestedEvent.Create(
+        return _messagePublisher.PublishAsync(KafkaTopicKeys.AuditLog, AuditLogRequestedEvent.Create(
             AuditActions.DonationFailed,
             "Donation",
             @event.DonationId.ToString(),
