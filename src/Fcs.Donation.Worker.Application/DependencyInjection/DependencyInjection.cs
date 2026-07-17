@@ -1,5 +1,5 @@
+using Fcs.Donation.Worker.Application.Common.Messaging;
 using Fcs.Donation.Worker.Application.Common.Settings;
-using Fcs.Donation.Worker.Application.Features.DonationReceived.Audit;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Http;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Kafka;
 using Fcs.Donation.Worker.Application.Features.DonationReceived.Services;
@@ -36,7 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IDonationProcessingRepository, SqlServerDonationProcessingRepository>();
         services.AddScoped<DonationProcessingService>();
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton<IAuditPublisher, KafkaAuditPublisher>();
+        services.AddSingleton<IMessagePublisher, KafkaMessagePublisher>();
         services.AddHostedService<DonationReceivedEventConsumer>();
         services.AddCampaignsClient();
 
