@@ -139,7 +139,7 @@ public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent
             return default;
         }
 
-        var traceState = headers?.GetLastBytes("tracestate");
+        var traceState = headers?.FirstOrDefault(header => header.Key == "tracestate")?.GetValueBytes();
         return ActivityContext.TryParse(
             Encoding.UTF8.GetString(traceParent),
             traceState is null ? null : Encoding.UTF8.GetString(traceState),
