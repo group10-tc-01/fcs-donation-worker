@@ -65,6 +65,7 @@ public class Program
             {
                 tracing
                     .SetResourceBuilder(resourceBuilder)
+                    .AddSource(options.ServiceName)
                     .AddAspNetCoreInstrumentation(opts =>
                     {
                         opts.Filter = httpContext =>
@@ -125,6 +126,7 @@ public class Program
                 .ReadFrom.Configuration(configuration)
                 .ReadFrom.Services(serviceProvider)
                 .Enrich.FromLogContext()
+                .Enrich.With<TraceContextEnricher>()
                 .Enrich.WithProperty("Application", options.ServiceName)
                 .Enrich.WithProperty("Environment", environment)
                 .WriteTo.Console();

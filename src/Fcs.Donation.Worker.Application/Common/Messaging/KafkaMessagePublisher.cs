@@ -3,6 +3,8 @@ using Fcs.Donation.Worker.Application.Common.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 
 namespace Fcs.Donation.Worker.Application.Common.Messaging;
@@ -32,8 +34,26 @@ public sealed class KafkaMessagePublisher : IMessagePublisher
         using var producer = new ProducerBuilder<Null, string>(config).Build();
         var payload = JsonSerializer.Serialize(message, SerializerOptions);
         var resolvedTopicName = ResolveTopicName(topicName);
-        await producer.ProduceAsync(resolvedTopicName, new Message<Null, string> { Value = payload }, cancellationToken);
+        await producer.ProduceAsync(resolvedTopicName, CreateMessage(payload), cancellationToken);
         _logger.LogInformation("Published message to topic {TopicName}", resolvedTopicName);
+    }
+
+    private static Message<Null, string> CreateMessage(string payload)
+    {
+        var headers = new Headers();
+        var activity = Activity.Current;
+
+        if (activity?.Id is { } traceParent)
+        {
+            headers.Add("traceparent", Encoding.UTF8.GetBytes(traceParent));
+        }
+
+        if (!string.IsNullOrWhiteSpace(activity?.TraceStateString))
+        {
+            headers.Add("tracestate", Encoding.UTF8.GetBytes(activity.TraceStateString));
+        }
+
+        return new Message<Null, string> { Value = payload, Headers = headers };
     }
 
     private string ResolveTopicName(string topicKey)
