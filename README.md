@@ -1,74 +1,73 @@
 # fcs-donation-worker
 
-Worker de processamento assincrono de doacoes da plataforma Conexao Solidaria. Consome eventos `DonationReceivedEvent` publicados no Kafka pela `fcs-donations`, atualiza o status da doacao no `DonationsDb` e notifica a `fcs-campaign` por API interna para refletir o valor arrecadado.
+Worker de processamento assíncrono de doações da plataforma Conexão Solidária. Consome eventos `DonationReceivedEvent` publicados no Kafka pela `fcs-donations`, atualiza o status da doação no `DonationsDb` e notifica a `fcs-campaign` por API interna para refletir o valor arrecadado.
 
-> Microsservico que compoe o MVP da Conexao Solidaria junto a `fcs-identity`, `fcs-campaign`, `fcs-donations`, `fcs-audit-logs`, `fcs-web` e `fcs-infra`.
+> Microsserviço que compõe o MVP da Conexão Solidária junto a `fcs-identity`, `fcs-campaign`, `fcs-donations`, `fcs-notifications`, `fcs-audit-logs`, `fcs-web` e `fcs-infra`.
 
 ---
 
 ## Responsabilidades
 
-- Consumir eventos `DonationReceivedEvent` do topico Kafka `donation-received`.
-- Garantir idempotencia por `eventId + topic` usando `ProcessedMessages`.
-- Ler e atualizar doacoes no `DonationsDb`.
-- Atualizar a doacao para `Processed` ou `Failed`.
-- Preencher `FailureReason` quando a doacao falhar.
-- Chamar a API interna da `fcs-campaign` para registrar doacao processada.
-- Publicar eventos explicitos de auditoria quando houver processamento, falha ou duplicidade.
-- Expor apenas endpoints operacionais `/health` e `/metrics` quando configurados no ambiente de execucao.
+- Consumir eventos `DonationReceivedEvent` do tópico Kafka `donation-received`.
+- Garantir idempotência por `eventId + topic` usando `ProcessedMessages`.
+- Ler e atualizar doações no `DonationsDb`.
+- Atualizar a doação para `Processed` ou `Failed`.
+- Preencher `FailureReason` quando a doação falhar.
+- Chamar a API interna da `fcs-campaign` para registrar doação processada.
+- Publicar `EmailNotificationRequestedEvent` para a `fcs-notifications` após uma doação processada.
+- Publicar eventos explícitos de auditoria quando houver processamento, falha ou duplicidade.
+- Expor apenas endpoints operacionais `/health` e `/metrics` quando configurados no ambiente de execução.
 
-O `fcs-donation-worker` nao possui endpoints HTTP de negocio e nao escreve diretamente no banco da `fcs-campaign`.
+O `fcs-donation-worker` não possui endpoints HTTP de negócio e não escreve diretamente no banco da `fcs-campaign`.
 
-Documentacao completa da arquitetura: [group10-tc-01/fcs-fase05-docs](https://github.com/group10-tc-01/fcs-fase05-docs).
+Documentação completa da arquitetura: [group10-tc-01/fcs-fase05-docs](https://github.com/group10-tc-01/fcs-fase05-docs).
 
-Referencias diretas:
+Referências diretas:
 
-- [Visao geral da arquitetura](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/overview.md)
-- [Fluxo da fcs-donations](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/fcs-donations-flow.md)
+- [Visão geral da arquitetura](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/overview.md)
+- [Fluxo da fcs-donations](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/fcs-donations-model.md)
 - [Modelo de banco de dados](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/database-model.md)
-- [Endpoints consolidados](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/endpoints.md)
 - [Fluxos dos endpoints e workers](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/endpoint-flows.md)
 
 ADRs relevantes:
 
-- [ADR 0008 - Kafka para eventos de doacao](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0008-use-kafka-for-donation-events.md)
-- [ADR 0009 - Worker atualiza status da doacao](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0009-worker-updates-donation-status.md)
+- [ADR 0008 - Kafka para eventos de doação](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0008-use-kafka-for-donation-events.md)
+- [ADR 0009 - Worker atualiza status da doação](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0009-worker-updates-donation-status.md)
 - [ADR 0010 - Worker atualiza campanhas por API interna](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0010-worker-updates-campaigns-through-internal-api.md)
-- [ADR 0018 - Kafka dentro do Kubernetes](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0018-run-kafka-inside-kubernetes.md)
-- [ADR 0022 - Reuso do fcs-pipelines](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0022-reuse-fcs-pipelines-for-ci-cd.md)
-- [ADR 0023 - Estrutura interna .NET da fase 04](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0023-use-phase-04-dotnet-service-structure.md)
+- [ADR 0014 - Kafka dentro do Kubernetes](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0014-run-kafka-inside-kubernetes.md)
+- [ADR 0018 - Reuso do fcs-pipelines](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0018-reuse-fcs-pipelines-for-ci-cd.md)
+- [ADR 0019 - Estrutura interna .NET da fase 04](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0019-use-phase-04-dotnet-service-structure.md)
 
 ---
 
-## Fluxo de Processamento
+## Fluxo de processamento
 
-```text
-fcs-donations
-        |
-        | Kafka topic donation-received
-        v
-fcs-donation-worker
-        |
-        +--> DonationsDb: status Processed ou Failed
-        |
-        +--> fcs-campaign: POST /api/v1/internal/campaigns/{id}/donation-processed
-        |
-        +--> Kafka topic audit-log-requested
+```mermaid
+sequenceDiagram
+    participant Kafka as Kafka donation-received
+    participant Worker as fcs-donation-worker
+    participant Db as DonationsDb
+    participant Campaign as fcs-campaign
+    Kafka->>Worker: DonationReceivedEvent
+    Worker->>Db: Verificar ProcessedMessages e Donation
+    Worker->>Campaign: POST /internal/campaigns/{id}/donation-processed
+    Worker->>Db: Atualizar status Processed ou Failed
+    Worker->>Kafka: Publicar auditoria e confirmar offset
 ```
 
 Regras importantes:
 
 - A `fcs-donations` publica `DonationReceivedEvent` via outbox.
 - O worker registra mensagens tratadas em estado terminal em `ProcessedMessages` para ignorar redeliveries.
-- Duplicidade deve ser tratada como sucesso operacional e nao deve chamar campanhas novamente.
-- A atualizacao da campanha sempre passa pela API interna da `fcs-campaign`.
-- O offset Kafka so deve ser confirmado apos processamento de negocio bem-sucedido, duplicidade idempotente ou falha controlada registrada.
+- Duplicidade deve ser tratada como sucesso operacional e não deve chamar campanhas novamente.
+- A atualização da campanha sempre passa pela API interna da `fcs-campaign`.
+- O offset Kafka só deve ser confirmado após processamento de negócio bem-sucedido, duplicidade idempotente ou falha controlada registrada.
 
 ---
 
 ## Contrato Kafka
 
-Topico:
+Tópico:
 
 ```text
 donation-received
@@ -80,7 +79,7 @@ Evento:
 DonationReceivedEvent
 ```
 
-Payload minimo:
+Payload mínimo:
 
 ```json
 {
@@ -93,20 +92,20 @@ Payload minimo:
 }
 ```
 
-Campos obrigatorios:
+Campos obrigatórios:
 
-| Campo | Descricao |
+| Campo | Descrição |
 |-------|-----------|
-| `eventId` | Identificador unico usado para idempotencia |
-| `donationId` | Doacao criada pela `fcs-donations` |
-| `campaignId` | Campanha que recebera a doacao |
+| `eventId` | Identificador único usado para idempotência |
+| `donationId` | Doação criada pela `fcs-donations` |
+| `campaignId` | Campanha que receberá a doação |
 | `donorId` | Perfil do doador sem foreign key para `IdentityDb` |
-| `amount` | Valor da doacao |
+| `amount` | Valor da doação |
 | `occurredAt` | Data/hora UTC do evento original |
 
 ---
 
-## Integracao Interna
+## Integração interna
 
 Chamada esperada para campanhas:
 
@@ -126,23 +125,23 @@ Payload:
 
 ---
 
-## Estrutura do Projeto
+## Estrutura do projeto
 
 ```text
 src/
-  Fcs.Donation.Worker.Application/    # Consumers Kafka, idempotencia e servicos de processamento
+  Fcs.Donation.Worker.Application/    # Consumers Kafka, idempotência e serviços de processamento
     Common/
     Features/
-  Fcs.Donation.Worker.Worker/         # Host .NET Worker, configuracao e Dockerfile
+  Fcs.Donation.Worker.Worker/         # Host .NET Worker, configuração e Dockerfile
 tests/
   Fcs.Donation.Worker.UnitTests/
 ```
 
-Estrutura interna alinhada ao padrao da fase 04 ([ADR 0023](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0023-use-phase-04-dotnet-service-structure.md)).
+Estrutura interna alinhada ao padrão da fase 04 ([ADR 0019](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0019-use-phase-04-dotnet-service-structure.md)).
 
 ---
 
-## Persistencia
+## Persistência
 
 - Engine: SQL Server.
 - Database: `DonationsDb`.
@@ -150,9 +149,9 @@ Estrutura interna alinhada ao padrao da fase 04 ([ADR 0023](https://github.com/g
   - `Donations`
   - `ProcessedMessages`
 
-O worker nao cria foreign keys para bancos de outros servicos.
+O worker não cria foreign keys para bancos de outros serviços.
 
-`ProcessedMessages` registra o `eventId + topic` quando a mensagem chega a um resultado terminal: sucesso, doacao inexistente, doacao fora de `Pending` ou falha controlada apos tentativas de refletir a doacao na `fcs-campaign`.
+`ProcessedMessages` registra o `eventId + topic` quando a mensagem chega a um resultado terminal: sucesso, doação inexistente, doação fora de `Pending` ou falha controlada após tentativas de refletir a doação na `fcs-campaign`.
 
 Eventos de auditoria esperados:
 
@@ -162,25 +161,25 @@ Eventos de auditoria esperados:
 
 ---
 
-## Pre-requisitos
+## Pré-requisitos
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Docker](https://docs.docker.com/get-docker/) e Docker Compose
 - Portas livres no host: `1433` (SQL Server), `9092` (Kafka), `8081` (Kafka UI), `5341` (Seq).
 
 ---
 
-## Subindo o Ambiente Local
+## Subindo o ambiente local
 
-O `docker-compose.yml` deste repositorio sobe apenas as dependencias deste worker (SQL Server, Kafka, Kafka UI e Seq) e, opcionalmente, o proprio worker. Para o ambiente completo integrado da Conexao Solidaria utilize o repositorio `fcs-infra`.
+O `docker-compose.yml` deste repositório sobe apenas as dependências deste worker (SQL Server, Kafka, Kafka UI e Seq) e, opcionalmente, o próprio worker. Para o ambiente completo integrado da Conexão Solidária, utilize o repositório `fcs-infra`.
 
-### 1. Subir dependencias
+### 1. Subir dependências
 
 ```bash
 docker compose up -d sqlserver zookeeper kafka kafka-ui seq
 ```
 
-URLs uteis:
+URLs úteis:
 
 - Kafka UI: http://localhost:8081
 - Seq: http://localhost:5341
@@ -194,7 +193,7 @@ dotnet build
 dotnet run --project src/Fcs.Donation.Worker.Worker
 ```
 
-### 2b. Rodar o worker tambem em container
+### 2b. Rodar o worker também em contêiner
 
 ```bash
 docker compose up -d --build fcs-donation-worker
@@ -222,53 +221,53 @@ Payload de exemplo:
 # Todos os testes
 dotnet test
 
-# Projeto de testes unitarios
+# Projeto de testes unitários
 dotnet test tests/Fcs.Donation.Worker.UnitTests
 ```
 
-Cobertura minima exigida pela esteira: **80%** ([ADR 0025](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0025-test-strategy-for-apis-and-worker.md)).
+Cobertura mínima exigida pela esteira: **80%** ([ADR 0021](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0021-test-strategy-for-apis-and-worker.md)).
 
 ---
 
 ## Observabilidade
 
 - Logs estruturados com **Serilog** enviados ao **Seq** em ambiente local.
-- Consumo Kafka com logs de duplicidade, falha de processamento e retry por nao commit de offset.
-- Endpoints operacionais esperados no ambiente de execucao:
+- Consumo Kafka com logs de duplicidade, falha de processamento e retry por não commit de offset.
+- Endpoints operacionais esperados no ambiente de execução:
   - `/health`
   - `/metrics`
 
-Esses endpoints nao sao publicados no Azure API Management ([ADR 0027](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0027-keep-internal-apis-cluster-private.md)).
+O worker não expõe endpoints de negócio; sua comunicação operacional segue a [visão geral da arquitetura](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/architecture/overview.md).
 
 ---
 
 ## CI/CD
 
-A esteira fica em `.github/workflows/` reutilizando os workflows reutilizaveis do repositorio `fcs-pipelines` ([ADR 0022](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0022-reuse-fcs-pipelines-for-ci-cd.md)):
+A esteira fica em `.github/workflows/` reutilizando os workflows reutilizáveis do repositório `fcs-pipelines` ([ADR 0018](https://github.com/group10-tc-01/fcs-fase05-docs/blob/main/adr/0018-reuse-fcs-pipelines-for-ci-cd.md)):
 
-- `branch-name-check.yml` - politica de nomes de branch
-- `dotnet-service-ci.yml` - build .NET, testes, SonarCloud, Trivy e validacoes do servico
+- `branch-name-check.yml` - política de nomes de branch
+- `dotnet-service-ci.yml` - build .NET, testes, SonarCloud, Trivy e validações do serviço
 
-Gates principais: secret scan (Gitleaks), dependency scan, restore/build, testes com cobertura minima de 80%, SonarCloud opcional e regras de protecao por branch.
+Gates principais: secret scan (Gitleaks), dependency scan, restore/build, testes com cobertura mínima de 80%, SonarCloud opcional e regras de proteção por branch.
 
 ---
 
 ## Kubernetes
 
-Manifests Kubernetes deste worker (Deployment, Service, ConfigMap, Secret) ficam no repositorio `fcs-infra`, junto ao ambiente integrado Kind/AKS.
+Manifests Kubernetes deste worker (Deployment, Service, ConfigMap, Secret) ficam no repositório `fcs-infra`, junto ao ambiente integrado VPS/K3s.
 
 Namespace alvo: `fcs-donation-worker`.
 
 ---
 
-## Como este Worker Atende ao Hackathon
+## Como este worker atende ao hackathon
 
-| Requisito do hackathon | Onde e atendido |
+| Requisito do hackathon | Onde é atendido |
 |------------------------|-----------------|
-| Microsservico distinto | `fcs-donation-worker` separado das APIs de negocio |
-| Mensageria assincrona | Consumo do topico Kafka `donation-received` |
-| Processamento em background | Worker .NET para fechar o fluxo de doacoes |
+| Microsserviço distinto | `fcs-donation-worker` separado das APIs de negócio |
+| Mensageria assíncrona | Consumo do tópico Kafka `donation-received` |
+| Processamento em background | Worker .NET para fechar o fluxo de doações |
 | Observabilidade | Logs estruturados, `/health` e `/metrics` |
 | Imagem Docker e pipeline | `Dockerfile`, `docker-compose.yml` e workflows em `.github/workflows` |
 
-O `fcs-donation-worker` fecha o fluxo assincrono entre intencao de doacao, processamento, atualizacao de status e reflexo do valor arrecadado na campanha.
+O `fcs-donation-worker` fecha o fluxo assíncrono entre intenção de doação, processamento, atualização de status e reflexo do valor arrecadado na campanha.
