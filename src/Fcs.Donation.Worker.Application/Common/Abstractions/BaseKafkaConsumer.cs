@@ -1,7 +1,9 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json;
 
 namespace Fcs.Donation.Worker.Application.Common.Abstractions;
@@ -10,6 +12,7 @@ namespace Fcs.Donation.Worker.Application.Common.Abstractions;
 public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent : class
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
+    private static readonly ActivitySource KafkaActivitySource = new("Fcs.Donation.Worker");
 
     private readonly IConsumer<string, string> _consumer;
     private readonly ILogger _logger;
@@ -90,6 +93,15 @@ public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent
 
             try
             {
+                using var activity = KafkaActivitySource.StartActivity(
+                    $"kafka consume {_topic}",
+                    ActivityKind.Consumer,
+                    GetParentContext(consumeResult.Message.Headers));
+
+                activity?.SetTag("messaging.system", "kafka");
+                activity?.SetTag("messaging.destination.name", _topic);
+                activity?.SetTag("messaging.operation.name", "process");
+
                 await ProcessEventAsync(@event, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -117,6 +129,24 @@ public abstract class BaseKafkaConsumer<TEvent> : BackgroundService where TEvent
     }
 
     protected abstract Task ProcessEventAsync(TEvent @event, CancellationToken cancellationToken);
+
+    private static ActivityContext GetParentContext(Headers? headers)
+    {
+        var traceParent = headers?.GetLastBytes("traceparent");
+
+        if (traceParent is null)
+        {
+            return default;
+        }
+
+        var traceState = headers?.FirstOrDefault(header => header.Key == "tracestate")?.GetValueBytes();
+        return ActivityContext.TryParse(
+            Encoding.UTF8.GetString(traceParent),
+            traceState is null ? null : Encoding.UTF8.GetString(traceState),
+            out var context)
+            ? context
+            : default;
+    }
 
     public override void Dispose()
     {
