@@ -7,7 +7,7 @@ metadata:
   annotations:
     github.com/project-slug: group10-tc-01/fcs-donation-worker
     backstage.io/techdocs-ref: dir:.
-    backstage.io/kubernetes-id: fcs-donation-worker
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=fcs-donation-worker
     backstage.io/kubernetes-namespace: fcs-donation-worker
   links:
     - title: Datadog
